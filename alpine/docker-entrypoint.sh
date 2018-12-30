@@ -29,51 +29,6 @@ if [ -n "${ADMIN_PASSWORD}" ]; then
     ADMIN_PASSWORD_MD5=$(echo -n "${ADMIN_PASSWORD}" | md5sum | sed -e 's/  -$//')
 fi
 
-# Create MySQL database if it does not exists
-if [ -n "${MYSQL_HOST}" ]; then
-    echo "Wait for MySQL server" ...
-    while ! mysqladmin ping -h"$MYSQL_HOST" --silent; do
-        sleep 1
-    done
-fi
-
-if [ -n "${MYSQL_ROOT_USER}" ]; then
-    if [ -n "${MYSQL_ROOT_PASSWORD}" ]; then
-        echo "Setting up MySQL database if it does not exists ..."
-
-        mkdir -p sql_temp
-        cp -f ./sql/framework.sql ./sql_temp
-        cp -f ./sql/user.sql ./sql_temp
-
-        if [ -n "${MYSQL_DATABASE}" ]; then
-            echo "Modifying database name ..."
-            sed -i  -e "s/ccio/${MYSQL_DATABASE}/g" \
-                "./sql_temp/framework.sql"
-            
-            sed -i  -e "s/ccio/${MYSQL_DATABASE}/g" \
-                "./sql_temp/user.sql"
-        fi
-
-        if [ -n "${MYSQL_ROOT_USER}" ]; then
-            if [ -n "${MYSQL_ROOT_PASSWORD}" ]; then
-                echo "Modifying user creation script ..."
-                sed -i -e "s/majesticflame/${MYSQL_USER}/g" \
-                    -e "s/\x27\x27/\x27${MYSQL_PASSWORD}\x27/g" \
-                    -e "s/127.0.0.1/%/g" \
-                    "./sql_temp/user.sql"
-            fi
-        fi
-
-        echo "Create database schema if it does not exists ..."
-        mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -h $MYSQL_HOST -e "source ./sql_temp/framework.sql" || true
-
-        echo "Create database user if it does not exists ..."
-        mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -h $MYSQL_HOST -e "source ./sql_temp/user.sql" || true
-
-        rm -rf sql_temp
-    fi
-fi
-
 # set config data from variables
 echo "Set MySQL configuration from environment variables ..."
 if [ -n "${MYSQL_USER}" ]; then
